@@ -1,0 +1,21 @@
+.github/workflows/sync.yml
+  s_94be1380adb264::t_903303cc547488 1-80
+README.md
+  s_94be1380adb264::t_94047c04bb3e5d 1-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3f18ce11cc8d745dc533c3d9e13d58bcdb7ffd7d",
+  "prompts": {},
+  "sessions": {
+    "s_94be1380adb264": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "922f3f57-c125-4d5e-9499-12e7bb69cd67",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Damon Meledones <dmeledon@users.noreply.github.com>"
+    }
+  }
+}
