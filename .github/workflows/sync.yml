@@ -1,0 +1,80 @@
+# Imports new upstream BearSSL commits and tags into this repo, fast-forward only, and opens an issue when
+# anything new arrives. master and the v* tags are exact copies of upstream; this branch holds only the sync.
+name: sync upstream
+
+on:
+  schedule:
+    - cron: "23 7 * * 1" # Mondays 07:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency: sync
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      UPSTREAM: https://www.bearssl.org/git/BearSSL
+      GITWEB: https://www.bearssl.org/gitweb/?p=BearSSL;a=commit;h=
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Fetch upstream and this repo
+        run: |
+          set -euo pipefail
+          git init -q work && cd work
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add fork "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch -q --no-tags "$UPSTREAM" "+refs/heads/master:refs/up/master" "+refs/tags/*:refs/up-tags/*"
+          git fetch -q --no-tags fork "+refs/heads/master:refs/fork/master" "+refs/heads/sync:refs/fork/sync" \
+            "+refs/tags/*:refs/fork-tags/*"
+
+      - name: Push new commits and tags
+        working-directory: work
+        run: |
+          set -euo pipefail
+          # Upstream rewriting history or moving a tag fails the job; nothing is ever force-pushed.
+          if ! git merge-base --is-ancestor refs/fork/master refs/up/master; then
+            echo "::error::upstream master does not descend from our master (history rewritten?)"; exit 1
+          fi
+          new_tags=()
+          for ref in $(git for-each-ref --format='%(refname)' refs/up-tags/); do
+            tag=${ref#refs/up-tags/}
+            if ! ours=$(git rev-parse -q --verify "refs/fork-tags/$tag"); then
+              new_tags+=("$tag")
+            elif [ "$ours" != "$(git rev-parse "$ref")" ]; then
+              echo "::error::upstream moved tag $tag"; exit 1
+            fi
+          done
+          commits=$(git log --reverse --format="- [%h](${GITWEB}%H) %ad %s" --date=short refs/fork/master..refs/up/master)
+          if [ -z "$commits" ] && [ ${#new_tags[@]} -eq 0 ]; then
+            echo "Up to date."; exit 0
+          fi
+          refspecs=(refs/up/master:refs/heads/master)
+          for tag in "${new_tags[@]}"; do refspecs+=("refs/up-tags/$tag:refs/tags/$tag"); done
+          git push -q fork "${refspecs[@]}"
+
+          title="Upstream: $(git rev-list --count refs/fork/master..refs/up/master) new commit(s)"
+          [ ${#new_tags[@]} -gt 0 ] && title="$title, new release ${new_tags[*]}"
+          {
+            echo "Imported from $UPSTREAM into \`master\`."
+            echo
+            [ -n "$commits" ] && echo "$commits"
+            [ ${#new_tags[@]} -gt 0 ] && echo && echo "New tags: ${new_tags[*]}"
+            echo
+            echo "Review the changes before moving any submodule pin to them."
+          } > body.md
+          gh issue create -R "$GITHUB_REPOSITORY" --title "$title" --body-file body.md
+
+      - name: Keepalive
+        working-directory: work
+        run: |
+          set -euo pipefail
+          # GitHub disables scheduled workflows in a public repo after 60 days without repository activity.
+          if [ $(( $(date +%s) - $(git log -1 --format=%ct refs/fork/sync) )) -gt $(( 30 * 86400 )) ]; then
+            git commit-tree -p refs/fork/sync -m "keepalive" "refs/fork/sync^{tree}" > head
+            git push -q fork "$(cat head):refs/heads/sync"
+          fi
