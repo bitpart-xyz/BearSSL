@@ -1,0 +1,19 @@
+.github/workflows/sync-probe.yml
+  s_94be1380adb264::t_8cb8e750bd710f 1-17,19,21-24,26-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f245906a42c60cefe85127299ff98e0ab09288bb",
+  "prompts": {},
+  "sessions": {
+    "s_94be1380adb264": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "922f3f57-c125-4d5e-9499-12e7bb69cd67",
+        "model": "unknown"
+      },
+      "human_author": "Damon Meledones <dmeledon@users.noreply.github.com>"
+    }
+  }
+}
