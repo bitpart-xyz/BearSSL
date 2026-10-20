@@ -1,0 +1,19 @@
+.github/workflows/probe.yml
+  s_94be1380adb264::t_ef144790ac8dad 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "abb19706563d009e54e651346cc3849f1a200085",
+  "prompts": {},
+  "sessions": {
+    "s_94be1380adb264": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "922f3f57-c125-4d5e-9499-12e7bb69cd67",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Damon Meledones <dmeledon@users.noreply.github.com>"
+    }
+  }
+}
